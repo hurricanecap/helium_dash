@@ -126,7 +126,7 @@ def compiled():
             day_earnings += hotspot['day earnings']
             month_earnings += hotspot['month earnings']
             total_earnings += hotspot['total earnings']
-        curr_city = existing_df[existing_df['City'] == key]
+        #curr_city = existing_df[existing_df['City'] == key]
         d = {'city': key, '# hotspots': num_hotspots, '# offline': offline, '24hr earnings': day_earnings, '30d earnings': month_earnings,'total earnings': total_earnings}
         total.append(d)
     df = pd.DataFrame(total).sort_values(by= 'total earnings', ascending = False)
