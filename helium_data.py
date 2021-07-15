@@ -112,9 +112,6 @@ def get_cities(city):
     return cities
 
 def compiled():
-    existing_df['30d earnings'] = existing_df.apply(lambda x: get_mined(x['address'], time_30_d_ago), axis = 1)
-    existing_df['City'] = [d.get('long_city').upper() for d in existing_df['geocode']]
-
     data = get_cities('ALL')
     total = []
     for key in data.keys():
@@ -130,16 +127,14 @@ def compiled():
             month_earnings += hotspot['month earnings']
             total_earnings += hotspot['total earnings']
         curr_city = existing_df[existing_df['City'] == key]
-        d = {'city': key, '# hotspots': num_hotspots, '# offline': offline, '24hr earnings': day_earnings, '30d earnings': month_earnings, 'avg 30d earnings': month_earnings/num_hotspots,'city avg 30d earnings': round(curr_city['30d earnings'].sum()/len(curr_city),2),'total earnings': total_earnings}
+        d = {'city': key, '# hotspots': num_hotspots, '# offline': offline, '24hr earnings': day_earnings, '30d earnings': month_earnings,'total earnings': total_earnings}
         total.append(d)
     df = pd.DataFrame(total).sort_values(by= 'total earnings', ascending = False)
     d = dict(df.sum(axis =0, numeric_only = True))
     d['city'] = 'TOTAL'
     df = df.append(d, ignore_index = True)
-    data_types_dict = {'city':str, '# hotspots': int, '# offline': int, 'city avg 30d earnings':float}
+    data_types_dict = {'city':str, '# hotspots': int, '# offline': int}
     df = df.astype(data_types_dict)
-    df.loc[df.city == 'TOTAL','city avg 30d earnings'] = ' '
-    df.loc[df.city == 'TOTAL','avg 30d earnings'] = ' '
 
     return df  
 
