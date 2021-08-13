@@ -10,9 +10,6 @@ from scipy import spatial
 #DOES NOT NEED TEAMS - CHECKS PASSWORD
 def check_password():
     """Returns `True` if correct password is entered."""
-
-    # Show text field for password.
-    # You can move this anywhere on the page!
     password = st.sidebar.text_input("Password", type="password")
         
     # Check that it matches the stored password.
@@ -220,6 +217,11 @@ def stats(city_name):
 
 if check_password():
     st.sidebar.write("## Helium Hotspots")
+    total_earnings = sending_request('https://api.helium.io/v1/accounts/'+ nen +'/rewards/sum?min_time=2021-06-01T00:00:00')['sum']
+    helium_price = sending_request('https://api.helium.io/v1/oracle/prices/current')['price']/100000000
+    st.subheader('Total Earnings: '+ str(round(total_earnings/100000000,2))+' HNT' + r'''$\rarr$'''+ ' $'+str(round(total_earnings/100000000*helium_price,2)))
+    st.subheader('Average Hotspot Earnings: '+ str(round((total_earnings/100000000)/len(new_hotspots),2))+ ' HNT')
+    
     page = st.sidebar.selectbox("App Navigation", ["Hotspot Data", "Earnings Data"])
 
     if page == 'Hotspot Data':
