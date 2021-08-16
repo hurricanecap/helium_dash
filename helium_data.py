@@ -10,6 +10,9 @@ from scipy import spatial
 #DOES NOT NEED TEAMS - CHECKS PASSWORD
 def check_password():
     """Returns `True` if correct password is entered."""
+
+    # Show text field for password.
+    # You can move this anywhere on the page!
     password = st.sidebar.text_input("Password", type="password")
         
     # Check that it matches the stored password.
@@ -91,7 +94,11 @@ def get_mined(address, time = '2021-06-01T00:00:00'):
     else:
         t = time
     url = 'https://api.helium.io/v1/hotspots/' + address + '/rewards/sum' + '?min_time=' + t
-    total_mined = sending_request(url)['total']
+    #print(url)
+    r = requests.get(url=url, headers={})
+    data = r.json()
+    l = data['data']
+    total_mined = l['total']
     return total_mined
 def get_cities(city):
     cities = {}
@@ -123,7 +130,6 @@ def compiled():
             day_earnings += hotspot['day earnings']
             month_earnings += hotspot['month earnings']
             total_earnings += hotspot['total earnings']
-        #curr_city = existing_df[existing_df['City'] == key]
         d = {'city': key, '# hotspots': num_hotspots, '# offline': offline, '24hr earnings': day_earnings, '30d earnings': month_earnings,'total earnings': total_earnings}
         total.append(d)
     df = pd.DataFrame(total).sort_values(by= 'total earnings', ascending = False)
@@ -160,6 +166,11 @@ def color_status(val):
         else:
             color = 'white'
         return f'background-color:{color}'
+def recent_witnesses(address):
+    url = 'https://api.helium.io/v1/hotspots/' + address + '/witnesses'
+    data = sending_request(url)
+    recent_witnesses = len(data)
+    return recent_witnesses
 
 def stats(city_name):
     if city_name == 'ALL':
@@ -193,7 +204,9 @@ def stats(city_name):
     df = pd.DataFrame(witness).sort_values(by= 'total mined', ascending = False)
     
     cols = ['name','location','asset id','city', 'status','day earnings', 'month earnings','total mined','reward scale','closest hotspot (m)','recent witnesses']
-    
+    return df[cols]
+
+def add_total_avg(df):
     d_total = dict(df.sum(axis =0, numeric_only = True))
     d_total['name'] = 'TOTAL'
     d_total['location'] = " "
@@ -213,21 +226,29 @@ def stats(city_name):
     
     df = df.append(d, ignore_index = True)  
     df = df.append(d_total, ignore_index = True)
-    return df[cols].loc[:, (df != 0).any(axis=0)]
+    return df.loc[:, (df != 0).any(axis=0)]
 
 if check_password():
     st.sidebar.write("## Helium Hotspots")
     total_earnings = sending_request('https://api.helium.io/v1/accounts/'+ nen +'/rewards/sum?min_time=2021-06-01T00:00:00')['sum']
     helium_price = sending_request('https://api.helium.io/v1/oracle/prices/current')['price']/100000000
-    st.subheader('Total Earnings: '+ str(round(total_earnings/100000000,2))+' HNT' + r'''$\rarr$'''+ ' $'+str(round(total_earnings/100000000*helium_price,2)))
-    st.subheader('Average Hotspot Earnings: '+ str(round((total_earnings/100000000)/len(new_hotspots),2))+ ' HNT')
     
+    earned = pd.DataFrame([{'HNT': str(round(total_earnings/100000000,2)), '$': str(round(total_earnings/100000000*helium_price,2))}, {'HNT': str(round((total_earnings/100000000)/len(new_hotspots),2)), '$': str(round(((total_earnings/100000000)/len(new_hotspots))*helium_price,2))}])
+    earned.index = ['total earnings', 'average earnings']
+    earned
     page = st.sidebar.selectbox("App Navigation", ["Hotspot Data", "Earnings Data"])
-
+    
     if page == 'Hotspot Data':
         city_name = st.sidebar.selectbox('Choose a city' ,options)
         filt = st.sidebar.selectbox('Filter Online/Offline', ['All', 'Online','Offline'])
-        hot_data = stats(city_name).set_index('name')
+        hot_data = stats(city_name)
+        quantiles = hot_data[['total mined']].quantile(q=[1,.75,.5,.25, 0], axis= 0)
+        quantiles.index = ['100%','75%','50%','25%','0%']
+        quantiles.columns = ['earnings quartiles']
+        quantiles['earnings quartiles'] = quantiles.apply(lambda x: str(round(x['earnings quartiles'],2)), axis = 1)
+        quantiles
+        hot_data = add_total_avg(hot_data).set_index('name')
+
         if filt == 'Online':
             hot_data = hot_data[hot_data['status']== 'online']
         elif filt == 'Offline':
