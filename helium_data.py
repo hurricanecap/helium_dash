@@ -228,6 +228,8 @@ def add_total_avg(df):
     df = df.append(d_total, ignore_index = True)
     return df.loc[:, (df != 0).any(axis=0)]
 
+def get_quart():
+    pass
 if check_password():
     st.sidebar.write("## Helium Hotspots")
     total_earnings = sending_request('https://api.helium.io/v1/accounts/'+ nen +'/rewards/sum?min_time=2021-06-01T00:00:00')['sum']
@@ -242,11 +244,16 @@ if check_password():
         city_name = st.sidebar.selectbox('Choose a city' ,options)
         filt = st.sidebar.selectbox('Filter Online/Offline', ['All', 'Online','Offline'])
         hot_data = stats(city_name)
-        quantiles = hot_data[['total mined']].quantile(q=[1,.75,.5,.25, 0], axis= 0)
-        quantiles.index = ['100%','75%','50%','25%','0%']
+        quantiles = hot_data[['total mined']].quantile(q=[.75,.5,.25, 0], axis= 0)
+        quantiles.index = ['1st quartile','2nd quartile','3rd quartile','4th quartile',]
         quantiles.columns = ['earnings quartiles']
         quantiles['earnings quartiles'] = quantiles.apply(lambda x: str(round(x['earnings quartiles'],2)), axis = 1)
         quantiles
+        
+        df = hot_data.set_index('name')[['total mined']]
+        quant = df['total mined'].quantile(q=[0,.25,.5,.75,1]).values
+        df['quartile'] = pd.cut(df['total mined'], quant, labels = ['4','3','2','1'])
+        hot_data['quartile'] = hot_data['name'].map(df.to_dict()['quartile'])
         hot_data = add_total_avg(hot_data).set_index('name')
 
         if filt == 'Online':
@@ -260,6 +267,3 @@ if check_password():
     if page == 'Earnings Data':
         cities = compiled().set_index('city')
         st.table(cities.style.apply(lambda x: ['background: lightsteelblue' if x.name == 'TOTAL' else '' for i in x], axis=1).set_precision(2))
-
-
-
