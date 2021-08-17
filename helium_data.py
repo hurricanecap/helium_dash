@@ -244,8 +244,8 @@ if check_password():
         hot_data = stats(city_name)
         quantiles = hot_data[['month earnings']].quantile(q=[.75,.5,.25, 0], axis= 0)
         quantiles.index = ['1st quartile','2nd quartile','3rd quartile','4th quartile',]
-        quantiles.columns = ['month earnings quartiles']
-        quantiles['month earnings quartiles'] = quantiles.apply(lambda x: str(round(x['month earnings quartiles'],2)), axis = 1)
+        quantiles.columns = ['monthly earnings quartiles']
+        quantiles['monthly earnings quartiles'] = quantiles.apply(lambda x: str(round(x['monthly earnings quartiles'],2)), axis = 1)
         quantiles
         
         df = hot_data.set_index('name')[['month earnings']]
@@ -265,4 +265,3 @@ if check_password():
     if page == 'Earnings Data':
         cities = compiled().set_index('city')
         st.table(cities.style.apply(lambda x: ['background: lightsteelblue' if x.name == 'TOTAL' else '' for i in x], axis=1).set_precision(2))
-
