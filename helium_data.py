@@ -58,8 +58,9 @@ new_hotspots['cityid'] = [d.get('city_id') for d in new_hotspots['geocode']]
 
 existing_hotspots = []
 for c in list(set(new_hotspots['cityid'])):
-    url = 'https://api.helium.io/v1/cities/'+ c + '/hotspots'
-    existing_hotspots += sending_request(url)
+    if c != None:
+        url = 'https://api.helium.io/v1/cities/'+ c + '/hotspots'
+        existing_hotspots += sending_request(url)
 existing_df = pd.DataFrame(existing_hotspots)
 options = ['ALL'] + list(set(new_hotspots['clntcity']))
 
